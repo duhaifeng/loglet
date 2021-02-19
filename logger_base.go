@@ -11,8 +11,9 @@ import (
  * @author duhaifeng
  */
 type loggerBase struct {
-	logLevel   int
-	msgChannel chan *LogMsg
+	logLevel          int
+	logPositionOffset int //允许外部定义一个偏移量，避免外部二次封装时日志都打在外面的封装点上
+	msgChannel        chan *LogMsg
 }
 
 /**
@@ -29,6 +30,14 @@ func (logger *loggerBase) Init() {
  */
 func (logger *loggerBase) SetLogLevel(level string) {
 	logger.logLevel = logger.getLogLevelNum(level)
+}
+
+/**
+ * 设置日志打印堆栈点的偏移量
+ * @author duhaifeng
+ */
+func (logger *loggerBase) SetLogPositionOffset(logPositionOffset int) {
+	logger.logPositionOffset = logPositionOffset
 }
 
 /**
@@ -54,7 +63,7 @@ func (logger *loggerBase) WaitMsg() *LogMsg {
  * @author duhaifeng
  */
 func (logger *loggerBase) getMsg(msg string, msgArgs ...interface{}) *LogMsg {
-	return &LogMsg{msgTime: time.Now(), targetPoint: getLoggingPoint(), msgContent: fmt.Sprintf(msg, msgArgs...)}
+	return &LogMsg{msgTime: time.Now(), targetPoint: getLoggingPoint(logger.logPositionOffset), msgContent: fmt.Sprintf(msg, msgArgs...)}
 }
 
 /**
