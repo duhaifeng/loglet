@@ -1,9 +1,10 @@
 package loglet
 
 import (
+	"bytes"
 	"fmt"
 	"os"
-	"runtime/debug"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -52,62 +53,35 @@ func (msg *LogMsg) getFormattedMsg() string {
  * @author duhaifeng
  */
 func getLoggingPoint() string {
-	callStack := string(debug.Stack())
-	callStackArr := strings.Split(callStack, "\n")
 	/**
-	callStack返回格式：
+	runtime.Stack()返回格式：
 	goroutine 18 [running]:
 	runtime/debug.Stack(0x0, 0x0, 0x0)
 		/usr/local/go/src/runtime/debug/stack.go:24 +0xbe
-	loglet.getLoggingPoint(0x0, 0x0)
-		/Users/duhf/Documents/IdeaProjects/goProjects/src/loglet/common.go:32 +0x4f
-	loglet.(*loggerBase).getMsg(0xc420076438, 0x118e900, 0x11, 0xc420042e28, 0x3, 0x3, 0x0)
-		/Users/duhf/Documents/IdeaProjects/goProjects/src/loglet/logger_base.go:27 +0x57
-	loglet.(*loggerBase).Debug(0xc420076438, 0x118e900, 0x11, 0xc420042e28, 0x3, 0x3)
-		/Users/duhf/Documents/IdeaProjects/goProjects/src/loglet/logger_base.go:31 +0x61
-	loglet.TestLog(0xc4200b80f0)  （调用函数名字）
-		/Users/duhf/Documents/IdeaProjects/goProjects/src/loglet/logger_test.go:27 +0x40d （文件行号位置）
-	testing.tRunner(0xc4200b80f0, 0x11950a8)
-		/usr/local/go/src/testing/testing.go:746 +0x11f
-	created by testing.(*T).Run
-		/usr/local/go/src/testing/testing.go:789 +0x4e3
 	*/
-	//查找当前的goroutine号
-	routineNo := "-1"
-	for i := 0; i < len(callStackArr); i++ {
-		line := callStackArr[i]
-		if strings.HasPrefix(line, "goroutine") {
-			lineItems := strings.Split(line, " ")
-			if len(lineItems) > 1 {
-				routineNo = lineItems[1]
-			}
+	//查找当前的goroutine号（位于调用栈的的第一行中）
+	stackBuf := make([]byte, 64)
+	bufSize := runtime.Stack(stackBuf, false)
+	stackBuf = stackBuf[:bufSize]
+	stackBuf = bytes.TrimPrefix(stackBuf, []byte("goroutine "))
+	stackBuf = stackBuf[:bytes.IndexByte(stackBuf, ' ')]
+	routineNo := string(stackBuf)
+
+	funcName := ""
+	filePath := ""
+	line := -1
+	pcs := make([]uintptr, 25)
+	callDepth := runtime.Callers(0, pcs)
+	for i := 0; i < callDepth; i++ {
+		pc := pcs[i]
+		funcInfo := runtime.FuncForPC(pc)
+		if strings.Contains(funcInfo.Name(), "loglet") {
+			filePath, line = funcInfo.FileLine(pc)
+			funcName = funcInfo.Name()
 		}
 	}
-
-	loggingFileLine := ""
-	loggingFunc := ""
-	lastLine := ""
-	lastTwoLine := ""
-	//查找上层代码记录日志的调用点
-	for i := len(callStackArr) - 1; i >= 0; i-- {
-		line := callStackArr[i]
-		//如果进入了common/loglet.go或者logger_base.go，就说明上一级调用是外层业务代码的Log调用点，then this is the loglet point.
-		if loggingFileLine == "" && (strings.Contains(line, "common/loglet.go") || strings.Contains(line, "logger_base.go")) {
-			lastLine = strings.Split(lastLine, "(0x")[0]
-			funcItems := strings.Split(lastLine, "/")
-			//funcItems = strings.Split(funcItems[len(funcItems)-1], ".")
-			loggingFunc = funcItems[len(funcItems)-1]
-
-			//原始格式为：“/home/jupiter/cmd/joypaw-cli/xyz.go:35 +0xa4”，需要提炼出其中的 xyz.go:35
-			lastTwoLine = strings.Split(lastTwoLine, " ")[0]
-			lineItems := strings.Split(lastTwoLine, "/")
-			loggingFileLine = lineItems[len(lineItems)-1]
-			break
-		}
-		lastTwoLine = lastLine
-		lastLine = line
-	}
-	return loggingFileLine + " " + loggingFunc + "() [" + routineNo + "]"
+	file := filePath[strings.LastIndex(filePath, "/"):]
+	return fmt.Sprintf("%s %d %s() [%s]", file, line, funcName, routineNo)
 }
 
 /**
