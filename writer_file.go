@@ -12,7 +12,6 @@ import (
 
 /**
  * 文件日志书写器定义
- * @author duhaifeng
  */
 type FileWriter struct {
 	fileName          string
@@ -25,7 +24,6 @@ type FileWriter struct {
 
 /**
  * 设置日志文件的基名
- * @author duhaifeng
  */
 func (logger *FileWriter) SetFileBaseName(fileName string) {
 	logger.fileName = fileName
@@ -33,7 +31,6 @@ func (logger *FileWriter) SetFileBaseName(fileName string) {
 
 /**
  * 设置日志文件保留的个数
- * @author duhaifeng
  */
 func (logger *FileWriter) SetFileReserveNum(num int) {
 	if num > 0 && num < 1000 {
@@ -45,7 +42,6 @@ func (logger *FileWriter) SetFileReserveNum(num int) {
 
 /**
  * 设置日志文件滚动的Size
- * @author duhaifeng
  */
 func (logger *FileWriter) SetRotateSize(size int64) {
 	logger.rotateSize = size
@@ -53,7 +49,6 @@ func (logger *FileWriter) SetRotateSize(size int64) {
 
 /**
  * 向日志文件中输出日志
- * @author duhaifeng
  */
 func (logger *FileWriter) WriteLog(msg *LogMsg) {
 	logger.fileRollerCounter++
@@ -65,12 +60,12 @@ func (logger *FileWriter) WriteLog(msg *LogMsg) {
 	}
 	logFile, err := logger.getLoggingFile()
 	if err != nil {
-		printError("can not init loglet file: %s. error: %s.", logger.fileName, err.Error())
+		printError("can not init log file: %s. error: %s.", logger.fileName, err.Error())
 		return
 	}
 	_, err = logFile.WriteString(msg.getFormattedMsg())
 	if err != nil {
-		printError("can not write loglet to file: %s. error: %s.", logger.fileName, err.Error())
+		printError("can not write log to file: %s. error: %s.", logger.fileName, err.Error())
 		return
 	}
 	//根据系统不同输入换行符
@@ -88,7 +83,6 @@ func (logger *FileWriter) WriteLog(msg *LogMsg) {
 
 /**
  * 获取当前日志文件的句柄，不存在就打开一个新日志文件
- * @author duhaifeng
  */
 func (logger *FileWriter) getLoggingFile() (*os.File, error) {
 	if logger.logFile != nil {
@@ -104,7 +98,6 @@ func (logger *FileWriter) getLoggingFile() (*os.File, error) {
 
 /**
  * 如果单个日志大小超过配置size，则新建一个新的日志文件来写入
- * @author duhaifeng
  */
 func (logger *FileWriter) rollLogFile() error {
 	if logger.fileName == "" || logger.logFile == nil {
@@ -113,7 +106,7 @@ func (logger *FileWriter) rollLogFile() error {
 	fileInfo, err := os.Stat(logger.fileName)
 
 	if err != nil {
-		printError("can not get loglet file status: %s.", err.Error())
+		printError("can not get log file status: %s.", err.Error())
 		if os.IsNotExist(err) {
 			logger.logFile = nil //如果日志文件在写入过程中被人为删除，则促使生成下一文件
 		}
@@ -134,7 +127,7 @@ func (logger *FileWriter) rollLogFile() error {
 	newlogFileName := fileNameWithoutExt + "." + time.Now().Format("20060102_150405") + fileExt
 	err = logger.RenameCurLogFile(newlogFileName)
 	if err != nil {
-		printError("can not rename loglet file : %s.", err.Error())
+		printError("can not rename log file : %s.", err.Error())
 		return err
 	}
 
@@ -143,7 +136,6 @@ func (logger *FileWriter) rollLogFile() error {
 
 /**
  * 清理过期日志
- * @author duhaifeng
  */
 func (logger *FileWriter) deleteExpiredLogFile() error {
 	tempFileInfos, err := ioutil.ReadDir(filepath.Dir(logger.fileName))
@@ -151,9 +143,9 @@ func (logger *FileWriter) deleteExpiredLogFile() error {
 		printError("can not get file infos : %s.", err.Error())
 		return err
 	}
-	// 从所有文件中选择出.log文件，保存到fileInfos中 Added by liwenqiao 2017-7-24
+	// 从所有文件中选择出.log文件，保存到fileInfos中
 	fileInfos := make(SortableFileArr, 0, len(tempFileInfos))
-	fileExt := filepath.Ext(logger.fileName) // fileExt == ".loglet"
+	fileExt := filepath.Ext(logger.fileName) // fileExt == ".log"
 	fileNameItems := strings.Split(logger.fileName, "/")
 	fileName := fileNameItems[len(fileNameItems)-1]
 	fileName = strings.Replace(fileName, fileExt, "", -1) + "."
@@ -187,13 +179,12 @@ func (logger *FileWriter) deleteExpiredLogFile() error {
 
 /**
  * 重命名当前日志文件（例如在滚动日志文件时）
- * @author duhaifeng
  */
 func (logger *FileWriter) RenameCurLogFile(newFileName string) error {
 	logger.Close()
 	err := os.Rename(logger.fileName, newFileName)
 	if err != nil {
-		printError("can not rename loglet file: %s.", err.Error())
+		printError("can not rename log file: %s.", err.Error())
 		return err
 	}
 	return nil
@@ -201,13 +192,12 @@ func (logger *FileWriter) RenameCurLogFile(newFileName string) error {
 
 /**
  * 关闭当前日志文件
- * @author duhaifeng
  */
 func (logger *FileWriter) Close() {
 	if logger.logFile != nil {
 		err := logger.logFile.Close()
 		if err != nil {
-			printError("can not close loglet file: %s.", err.Error())
+			printError("can not close log file: %s.", err.Error())
 		}
 		logger.logFile = nil
 	}
@@ -215,7 +205,6 @@ func (logger *FileWriter) Close() {
 
 /**
  * 声明一个排序数组，用于对文件名排序
- * @author liwenqiao 2017-7-20
  */
 type SortableFileArr []os.FileInfo
 

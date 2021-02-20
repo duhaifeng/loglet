@@ -9,7 +9,7 @@ func TestLog(t *testing.T) {
 	logger := NewLogger()
 	conf := make(map[string]string)
 	conf["writers"] = "file,console"
-	conf["log_file"] = "/var/loglet/log_test/test.loglet"
+	conf["log_file"] = "/var/log/log_test/test.log"
 	conf["log_level"] = "info"
 	conf["max_size"] = "150k"
 	conf["file_number"] = "10"
@@ -27,7 +27,7 @@ func TestConcurrentLog(t *testing.T) {
 	logger := NewLogger()
 	conf := make(map[string]string)
 	conf["writers"] = "console"
-	conf["log_file"] = "/var/loglet/log_test/test.loglet"
+	conf["log_file"] = "/var/log/log_test/test.log"
 	conf["log_level"] = "debug"
 	conf["max_size"] = "150k"
 	conf["file_number"] = "10"

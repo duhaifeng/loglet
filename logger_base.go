@@ -8,7 +8,6 @@ import (
 
 /**
  * 日志记录器对象抽象定义
- * @author duhaifeng
  */
 type loggerBase struct {
 	logLevel          int
@@ -18,7 +17,6 @@ type loggerBase struct {
 
 /**
  * 初始化日志记录器内部日志缓存管道
- * @author duhaifeng
  */
 func (logger *loggerBase) Init() {
 	logger.msgChannel = make(chan *LogMsg, 100000)
@@ -26,7 +24,6 @@ func (logger *loggerBase) Init() {
 
 /**
  * 设置日志输出级别
- * @author duhaifeng
  */
 func (logger *loggerBase) SetLogLevel(level string) {
 	logger.logLevel = logger.getLogLevelNum(level)
@@ -34,7 +31,6 @@ func (logger *loggerBase) SetLogLevel(level string) {
 
 /**
  * 设置日志打印堆栈点的偏移量
- * @author duhaifeng
  */
 func (logger *loggerBase) SetLogPositionOffset(logPositionOffset int) {
 	logger.logPositionOffset = logPositionOffset
@@ -42,7 +38,6 @@ func (logger *loggerBase) SetLogPositionOffset(logPositionOffset int) {
 
 /**
  * 向日志缓存管道中追加日志记录
- * @author duhaifeng
  */
 func (logger *loggerBase) AppendMsg(msg *LogMsg) {
 	if logger.msgChannel != nil {
@@ -52,7 +47,6 @@ func (logger *loggerBase) AppendMsg(msg *LogMsg) {
 
 /**
  * 从日志缓存管道中获取日志记录
- * @author duhaifeng
  */
 func (logger *loggerBase) WaitMsg() *LogMsg {
 	return <-logger.msgChannel
@@ -60,7 +54,6 @@ func (logger *loggerBase) WaitMsg() *LogMsg {
 
 /**
  * 将一条上次传入的消息进行封装
- * @author duhaifeng
  */
 func (logger *loggerBase) getMsg(msg string, msgArgs ...interface{}) *LogMsg {
 	return &LogMsg{msgTime: time.Now(), targetPoint: getLoggingPoint(logger.logPositionOffset), msgContent: fmt.Sprintf(msg, msgArgs...)}
@@ -68,7 +61,6 @@ func (logger *loggerBase) getMsg(msg string, msgArgs ...interface{}) *LogMsg {
 
 /**
  * 写入Debug级别日志
- * @author duhaifeng
  */
 func (logger *loggerBase) Debug(content string, contentArgs ...interface{}) {
 	if logger.logLevel > DEBUG_LEVEL {
@@ -81,7 +73,6 @@ func (logger *loggerBase) Debug(content string, contentArgs ...interface{}) {
 
 /**
  * 写入Info级别日志
- * @author duhaifeng
  */
 func (logger *loggerBase) Info(content string, contentArgs ...interface{}) {
 	if logger.logLevel > INFO_LEVEL {
@@ -94,7 +85,6 @@ func (logger *loggerBase) Info(content string, contentArgs ...interface{}) {
 
 /**
  * 写入Warning级别日志
- * @author duhaifeng
  */
 func (logger *loggerBase) Warn(content string, contentArgs ...interface{}) {
 	if logger.logLevel > WARN_LEVEL {
@@ -107,7 +97,6 @@ func (logger *loggerBase) Warn(content string, contentArgs ...interface{}) {
 
 /**
  * 写入Error级别日志
- * @author duhaifeng
  */
 func (logger *loggerBase) Error(content interface{}, contentArgs ...interface{}) {
 	if logger.logLevel > ERROR_LEVEL {
@@ -129,7 +118,6 @@ func (logger *loggerBase) Error(content interface{}, contentArgs ...interface{})
 
 /**
  * 写入Fatal级别日志
- * @author duhaifeng
  */
 func (logger *loggerBase) Fatal(content string, contentArgs ...interface{}) {
 	if logger.logLevel > FATAL_LEVEL {
@@ -142,7 +130,6 @@ func (logger *loggerBase) Fatal(content string, contentArgs ...interface{}) {
 
 /**
  * 向日志缓存管道缓存日志
- * @author duhaifeng
  */
 func (logger *loggerBase) sendMsg(msg *LogMsg) {
 	if logger.msgChannel == nil {
@@ -153,7 +140,6 @@ func (logger *loggerBase) sendMsg(msg *LogMsg) {
 
 /**
  * 关闭日志缓存管道
- * @author duhaifeng
  */
 func (logger *loggerBase) CloseChannel() {
 	if logger.msgChannel == nil {
@@ -165,7 +151,6 @@ func (logger *loggerBase) CloseChannel() {
 
 /**
  * 判断当前日志记录是否达到了输出的定义级别，如果未达到则丢弃上层传入的消息
- * @author duhaifeng
  */
 func (logger *loggerBase) matchLogLevel(msg *LogMsg) bool {
 	return logger.getLogLevelNum(msg.msgLevel) >= logger.logLevel
@@ -173,7 +158,6 @@ func (logger *loggerBase) matchLogLevel(msg *LogMsg) bool {
 
 /**
  * 获取日志级别对应的数字，便于判断
- * @author duhaifeng
  */
 func (logger *loggerBase) getLogLevelNum(level string) int {
 	level = strings.ToUpper(level)

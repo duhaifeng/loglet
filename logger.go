@@ -7,7 +7,6 @@ import (
 
 /**
  * 创建一个日志实例
- * @author duhaifeng
  */
 func NewLogger() *Logger {
 	logger := new(Logger)
@@ -20,7 +19,6 @@ func NewLogger() *Logger {
 
 /**
  * 日志实例对象封装
- * @author duhaifeng
  */
 type Logger struct {
 	logWriters map[string]LogWriter //为了防止配置中重复出现file、console等，采用map进行滤重
@@ -29,7 +27,6 @@ type Logger struct {
 
 /**
  * 初试化日志实例配置，如果不传入任何配置，则只向控制台输出
- * @author duhaifeng
  */
 func (logger *Logger) Init(configs map[string]string) {
 	//为了避免重复Init，需要先关闭现已打开资源
@@ -56,7 +53,6 @@ func (logger *Logger) Init(configs map[string]string) {
 
 /**
  * 创建一个控制台日志书写器
- * @author duhaifeng
  */
 func (logger *Logger) createConsoleWriter(configs map[string]string) *ConsoleWriter {
 	consoleLogger := new(ConsoleWriter)
@@ -65,7 +61,6 @@ func (logger *Logger) createConsoleWriter(configs map[string]string) *ConsoleWri
 
 /**
  * 创建一个文件日志书写器
- * @author duhaifeng
  */
 func (logger *Logger) createFileWriter(configs map[string]string) *FileWriter {
 	fileLogger := new(FileWriter)
@@ -77,7 +72,7 @@ func (logger *Logger) createFileWriter(configs map[string]string) *FileWriter {
 	fileSizeStr = strings.Replace(fileSizeStr, "G", "", -1)
 	fileSize, err := strconv.Atoi(fileSizeStr)
 	if err != nil {
-		printError("loglet file size config error. use default size: 100M")
+		printError("log file size config error. use default size: 100M")
 		fileSize = 1024 * 1024 * 100
 	} else {
 		// modified by liwenqiao 2017-7-20
@@ -93,7 +88,7 @@ func (logger *Logger) createFileWriter(configs map[string]string) *FileWriter {
 	//设置要保留日志文件的个数
 	fileNum, err := strconv.Atoi(configs["file_number"])
 	if err != nil {
-		printError("loglet file reserve number config error. use default: 10")
+		printError("log file reserve number config error. use default: 10")
 		fileLogger.SetFileReserveNum(10)
 	} else {
 		fileLogger.SetFileReserveNum(fileNum)
@@ -103,7 +98,6 @@ func (logger *Logger) createFileWriter(configs map[string]string) *FileWriter {
 
 /**
  * 关闭所有的日志书写器
- * @author duhaifeng
  */
 func (logger *Logger) closeLogWriters() {
 	for _, logWriter := range logger.logWriters {
@@ -114,7 +108,6 @@ func (logger *Logger) closeLogWriters() {
 
 /**
  * 将日志缓存管道中的日志记录不断向各书写器输出
- * @author duhaifeng
  */
 func (logger *Logger) writeLog() {
 	for {

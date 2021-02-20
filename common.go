@@ -11,7 +11,6 @@ import (
 
 /**
  * 日志输出等级定义
- * @author duhaifeng
  */
 const (
 	DEBUG = "DEBUG"
@@ -29,7 +28,6 @@ const (
 
 /**
  * 日志输出消息包装
- * @author duhaifeng
  */
 type LogMsg struct {
 	msgLevel    string
@@ -41,7 +39,6 @@ type LogMsg struct {
 /**
  * 获取格式化后的日志输出字符
  * 2012-09-20 15:56:12  [ com.homer.HMain.printLog(HMain.java:24):java.lang.Class:http-bio-9980-exec-3:0 ] - [ DEBUG ]  log4j debug
- * @author duhaifeng
  */
 func (msg *LogMsg) getFormattedMsg() string {
 	timeStr := msg.msgTime.Format("2006-01-02 15:04:05.000")
@@ -50,7 +47,6 @@ func (msg *LogMsg) getFormattedMsg() string {
 
 /**
  * 从运行堆栈中获取日志产生的代码点
- * @author duhaifeng
  */
 func getLoggingPoint(offset int) string {
 	/**
@@ -94,8 +90,7 @@ func getLoggingPoint(offset int) string {
 
 /**
  * 将日志内部错误打印到控制台
- * @author duhaifeng
  */
 func printError(content string, contentArgs ...interface{}) {
-	fmt.Fprintf(os.Stderr, "<loglet.error> "+content+"\n", contentArgs...)
+	fmt.Fprintf(os.Stderr, "<log.error> "+content+"\n", contentArgs...)
 }
