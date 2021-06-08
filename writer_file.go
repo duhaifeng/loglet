@@ -49,6 +49,7 @@ func (logger *FileWriter) SetRotateSize(size int64) {
 
 /**
  * 向日志文件中输出日志
+ * TODO:这里改为由FileWriter自己内置管道缓存数据
  */
 func (logger *FileWriter) WriteLog(msg *LogMsg) {
 	logger.fileRollerCounter++

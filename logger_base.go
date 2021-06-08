@@ -37,15 +37,6 @@ func (logger *loggerBase) SetLogPositionOffset(logPositionOffset int) {
 }
 
 /**
- * 向日志缓存管道中追加日志记录
- */
-func (logger *loggerBase) AppendMsg(msg *LogMsg) {
-	if logger.msgChannel != nil {
-		logger.msgChannel <- msg
-	}
-}
-
-/**
  * 从日志缓存管道中获取日志记录
  */
 func (logger *loggerBase) WaitMsg() *LogMsg {
@@ -135,6 +126,7 @@ func (logger *loggerBase) sendMsg(msg *LogMsg) {
 	if logger.msgChannel == nil {
 		return
 	}
+	//TODO:这里改为直接向各个Writer广播消息，Console直接打印，File自己缓存
 	logger.msgChannel <- msg
 }
 
