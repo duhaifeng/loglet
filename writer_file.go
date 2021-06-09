@@ -112,13 +112,34 @@ func (logger *FileWriter) writeLogToFile(msg *LogMsg) {
 }
 
 /**
+ * 判断文件夹是否存在
+ */
+func (logger *FileWriter) isPathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return false
+}
+
+/**
  * 获取当前日志文件的句柄，不存在就打开一个新日志文件
  */
 func (logger *FileWriter) getLoggingFile() (*os.File, error) {
 	if logger.logFile != nil {
 		return logger.logFile, nil
 	}
-	//os.MkdirAll(logger.fileName, 0777)
+	//创建日志文件夹
+	logDir := filepath.Dir(logger.fileName)
+	if !logger.isPathExists(logDir) {
+		err := os.MkdirAll(logDir, 0777)
+		if err != nil {
+			return nil, err
+		}
+	}
 	var err error
 	logger.logFile, err = os.OpenFile(logger.fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
@@ -135,7 +156,6 @@ func (logger *FileWriter) rollLogFile() error {
 		return nil
 	}
 	fileInfo, err := os.Stat(logger.fileName)
-
 	if err != nil {
 		printError("can not get log file status: %s.", err.Error())
 		if os.IsNotExist(err) {
@@ -155,13 +175,11 @@ func (logger *FileWriter) rollLogFile() error {
 	// 修改log文件命名 liwenqiao 2017-7-20
 	fileExt := filepath.Ext(logger.fileName)
 	fileNameWithoutExt := strings.TrimSuffix(logger.fileName, fileExt)
-	newlogFileName := fileNameWithoutExt + "." + time.Now().Format("20060102_150405") + fileExt
-	err = logger.RenameCurLogFile(newlogFileName)
+	newLogFileName := fileNameWithoutExt + "." + time.Now().Format("20060102_150405.000") + fileExt
+	err = logger.RenameCurLogFile(newLogFileName)
 	if err != nil {
-		printError("can not rename log file : %s.", err.Error())
 		return err
 	}
-
 	return nil
 }
 
@@ -215,7 +233,7 @@ func (logger *FileWriter) RenameCurLogFile(newFileName string) error {
 	logger.Close()
 	err := os.Rename(logger.fileName, newFileName)
 	if err != nil {
-		printError("can not rename log file: %s.", err.Error())
+		printError("can not rename log file (%s -> %s): %s.", logger.fileName, newFileName, err.Error())
 		return err
 	}
 	return nil
