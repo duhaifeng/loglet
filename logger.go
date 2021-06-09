@@ -21,7 +21,6 @@ func NewLogger() *Logger {
  * 日志实例对象封装
  */
 type Logger struct {
-	logWriters map[string]LogWriter //为了防止配置中重复出现file、console等，采用map进行滤重
 	loggerBase
 }
 
@@ -30,25 +29,22 @@ type Logger struct {
  */
 func (logger *Logger) Init(configs map[string]string) {
 	//为了避免重复Init，需要先关闭现已打开资源
-	logger.loggerBase.CloseChannel()
-	logger.closeLogWriters()
+	logger.CloseWriters()
 
-	logger.loggerBase.Init()
 	logger.loggerBase.SetLogLevel(configs["log_level"])
 	logger.logWriters = make(map[string]LogWriter)
 	writers := strings.Split(configs["writers"], ",")
 	for _, writerName := range writers {
 		if strings.TrimSpace(writerName) == "console" {
-			logger.logWriters["console"] = logger.createConsoleWriter(configs)
+			logger.RegisterWriter("console", logger.createConsoleWriter(configs))
 		}
 		if strings.TrimSpace(writerName) == "file" {
-			logger.logWriters["file"] = logger.createFileWriter(configs)
+			logger.RegisterWriter("file", logger.createFileWriter(configs))
 		}
 	}
 	if len(logger.logWriters) == 0 {
-		logger.logWriters["console"] = logger.createConsoleWriter(configs)
+		logger.RegisterWriter("console", logger.createConsoleWriter(configs))
 	}
-	go logger.writeLog()
 }
 
 /**
@@ -64,6 +60,7 @@ func (logger *Logger) createConsoleWriter(configs map[string]string) *ConsoleWri
  */
 func (logger *Logger) createFileWriter(configs map[string]string) *FileWriter {
 	fileLogger := new(FileWriter)
+	fileLogger.Init()
 	fileLogger.SetFileBaseName(configs["log_file"])
 	fileSizeStr := strings.ToUpper(configs["max_size"])
 	fileSizeUnit := fileSizeStr[len(fileSizeStr)-1:] //取配置的最后一个字母作为日志文件大小的单位
@@ -94,30 +91,4 @@ func (logger *Logger) createFileWriter(configs map[string]string) *FileWriter {
 		fileLogger.SetFileReserveNum(fileNum)
 	}
 	return fileLogger
-}
-
-/**
- * 关闭所有的日志书写器
- */
-func (logger *Logger) closeLogWriters() {
-	for _, logWriter := range logger.logWriters {
-		logWriter.Close()
-	}
-	logger.logWriters = nil
-}
-
-/**
- * 将日志缓存管道中的日志记录不断向各书写器输出
- */
-func (logger *Logger) writeLog() {
-	for {
-		msg := logger.WaitMsg()
-		//添加一个空判断,防止后续报空指针
-		if msg == nil {
-			continue
-		}
-		for _, logWriter := range logger.logWriters {
-			logWriter.WriteLog(msg)
-		}
-	}
 }

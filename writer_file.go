@@ -20,6 +20,12 @@ type FileWriter struct {
 	logFile           *os.File
 	fileRollerCounter int //日志文件滚动计数器
 	logFileReserveNum int //保留历史文件的个数
+	bufferChan        chan *LogMsg
+}
+
+func (logger *FileWriter) Init() {
+	logger.bufferChan = make(chan *LogMsg, 10000)
+	go logger.persistLog()
 }
 
 /**
@@ -48,10 +54,33 @@ func (logger *FileWriter) SetRotateSize(size int64) {
 }
 
 /**
- * 向日志文件中输出日志
- * TODO:这里改为由FileWriter自己内置管道缓存数据
+ * 接收分发过来的日志
  */
 func (logger *FileWriter) WriteLog(msg *LogMsg) {
+	//为了避免日志文件读写慢阻塞主进程，先通过管道缓存
+	logger.bufferChan <- msg
+}
+
+/**
+ * 将缓存的日志写入文件
+ */
+func (logger *FileWriter) persistLog() {
+	for {
+		msg := <-logger.bufferChan
+		logger.writeLogToFile(msg)
+	}
+}
+
+/**
+ * 向日志文件中输出日志
+ */
+func (logger *FileWriter) writeLogToFile(msg *LogMsg) {
+	defer func() {
+		err := recover()
+		if err != nil {
+			printError("log internal err: %v", err)
+		}
+	}()
 	logger.fileRollerCounter++
 	//为了避免频繁判断日志文件大小，导致性能下降，每写入1K条日志才判断是否要滚日志文件
 	if logger.fileRollerCounter > 1000 {
@@ -89,6 +118,7 @@ func (logger *FileWriter) getLoggingFile() (*os.File, error) {
 	if logger.logFile != nil {
 		return logger.logFile, nil
 	}
+	//os.MkdirAll(logger.fileName, 0777)
 	var err error
 	logger.logFile, err = os.OpenFile(logger.fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {

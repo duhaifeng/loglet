@@ -11,15 +11,8 @@ import (
  */
 type loggerBase struct {
 	logLevel          int
-	logPositionOffset int //允许外部定义一个偏移量，避免外部二次封装时日志都打在外面的封装点上
-	msgChannel        chan *LogMsg
-}
-
-/**
- * 初始化日志记录器内部日志缓存管道
- */
-func (logger *loggerBase) Init() {
-	logger.msgChannel = make(chan *LogMsg, 100000)
+	logPositionOffset int                  //允许外部定义一个偏移量，避免外部二次封装时日志都打在外面的封装点上
+	logWriters        map[string]LogWriter //为了防止配置中重复出现file、console等，采用map进行滤重
 }
 
 /**
@@ -39,8 +32,30 @@ func (logger *loggerBase) SetLogPositionOffset(logPositionOffset int) {
 /**
  * 从日志缓存管道中获取日志记录
  */
-func (logger *loggerBase) WaitMsg() *LogMsg {
-	return <-logger.msgChannel
+func (logger *loggerBase) RegisterWriter(name string, logWriter LogWriter) {
+	if logger.logWriters == nil {
+		logger.logWriters = make(map[string]LogWriter)
+	}
+	logger.logWriters[name] = logWriter
+}
+
+/**
+ * 关闭所有的日志书写器
+ */
+func (logger *loggerBase) CloseWriters() {
+	for _, logWriter := range logger.logWriters {
+		logWriter.Close()
+	}
+	logger.logWriters = nil
+}
+
+/**
+ * 向日志缓存管道缓存日志
+ */
+func (logger *loggerBase) writeLog(msg *LogMsg) {
+	for _, logWriter := range logger.logWriters {
+		logWriter.WriteLog(msg)
+	}
 }
 
 /**
@@ -59,7 +74,7 @@ func (logger *loggerBase) Debug(content string, contentArgs ...interface{}) {
 	}
 	msg := logger.getMsg(content, contentArgs...)
 	msg.msgLevel = DEBUG
-	logger.sendMsg(msg)
+	logger.writeLog(msg)
 }
 
 /**
@@ -71,7 +86,7 @@ func (logger *loggerBase) Info(content string, contentArgs ...interface{}) {
 	}
 	msg := logger.getMsg(content, contentArgs...)
 	msg.msgLevel = INFO
-	logger.sendMsg(msg)
+	logger.writeLog(msg)
 }
 
 /**
@@ -83,7 +98,7 @@ func (logger *loggerBase) Warn(content string, contentArgs ...interface{}) {
 	}
 	msg := logger.getMsg(content, contentArgs...)
 	msg.msgLevel = WARN
-	logger.sendMsg(msg)
+	logger.writeLog(msg)
 }
 
 /**
@@ -104,7 +119,7 @@ func (logger *loggerBase) Error(content interface{}, contentArgs ...interface{})
 	}
 
 	msg.msgLevel = ERROR
-	logger.sendMsg(msg)
+	logger.writeLog(msg)
 }
 
 /**
@@ -116,29 +131,7 @@ func (logger *loggerBase) Fatal(content string, contentArgs ...interface{}) {
 	}
 	msg := logger.getMsg(content, contentArgs...)
 	msg.msgLevel = FATAL
-	logger.sendMsg(msg)
-}
-
-/**
- * 向日志缓存管道缓存日志
- */
-func (logger *loggerBase) sendMsg(msg *LogMsg) {
-	if logger.msgChannel == nil {
-		return
-	}
-	//TODO:这里改为直接向各个Writer广播消息，Console直接打印，File自己缓存
-	logger.msgChannel <- msg
-}
-
-/**
- * 关闭日志缓存管道
- */
-func (logger *loggerBase) CloseChannel() {
-	if logger.msgChannel == nil {
-		return
-	}
-	close(logger.msgChannel)
-	logger.msgChannel = nil
+	logger.writeLog(msg)
 }
 
 /**

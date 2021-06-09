@@ -10,6 +10,7 @@ const line = "ABCDEFGHIJKLMNOPQRSTUVWXYZ---日志--- "
 
 func TestFileWriter(t *testing.T) {
 	logger := new(FileWriter)
+	logger.Init()
 	logger.SetFileBaseName("/var/log/log_test/test.log")
 	logger.WriteLog(&LogMsg{msgLevel: DEBUG, msgTime: time.Now(), targetPoint: getLoggingPoint(0), msgContent: line})
 	logger.WriteLog(&LogMsg{msgLevel: INFO, msgTime: time.Now(), targetPoint: getLoggingPoint(0), msgContent: line})
@@ -21,6 +22,7 @@ func TestFileWriter(t *testing.T) {
 
 func TestRotateFileLog(t *testing.T) {
 	logger := new(FileWriter)
+	logger.Init()
 	logger.SetFileBaseName("/var/log/log_test/test.log")
 	logger.SetRotateSize(1024 * 100)
 	logger.SetFileReserveNum(10)
